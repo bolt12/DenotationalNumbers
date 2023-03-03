@@ -47,31 +47,35 @@ which case there will be a different number line to deal with.
 With this being said, the four arithmetic operations can be
 interpreted geometrically in the number line.
 
-For addition, we have that for any two whole numbers $m$ and $n$, $m +
-n = \text{the length of the segment obtained by concatenating the
-segments} [0, m] \text{and} [0, n]$:
+For addition, we have that for any two whole numbers $m$ and $n$, $m + n = \text{the length of the segment obtained by concatenating the segments} [0, m] \text{and} [0, n]$:
 
+```
         m + n
 <--------------------->
 |------|--------------|
  [0, m]    [0, n]
+```
 
 As noted above a fundamental issue in the arithmetic operations on
 whole numbers concerns the importance of having the _same unit_ as a
 fixed reference! For example, imagine we have these two _different_
 number lines:
 
+```
 |--|--|--|--|--|--|  (A)
 0  1  2  3  4  5  6
 
 |-----|-----|-----|  (B)
 0     1     2     3
+```
 
 If one takes segment $[0, 1]$ from the lower line (B) and segment $[0, 2]$
 from the upper line (A), could it be argued that $1 + 2 = 2$?
 
+```
 |-----|--|--|
    1  +  2
+```
 
 Although it looks like the lengths match with 2 the mistake is that
 all geometric representations of operations on whole numbers, are done
@@ -152,8 +156,8 @@ consecutive marks is equally spaced in the line.
 ```
 
 In a similar way to natural numbers as we know them, it is to be
-expected that if a mark $a$ is to the right of a mark $b$ then $a >
-b$. This allow us to define a line segment and its semantic:
+expected that if a mark $a$ is to the right of a mark $b$ then $a > b$.
+This allow us to define a line segment and its semantic:
 
 ```agda
   data _≤_ {Unit : Set} {line : Line Unit} : Rel (Mark line) 0ℓ where
@@ -172,19 +176,21 @@ b$. This allow us to define a line segment and its semantic:
 We've seen addition, but subtraction is also simple in fact we've
 defined it above. It is easy to see why, when understanding what
 subtraction means geometrically: $m - n$, when $m > n$, in the number
-line is exactly the length of going from $n$ to $m$, thus $m - n
-\equiv [n , m]$.
+line is exactly the length of going from $n$ to $m$, thus $m - n \equiv [n , m]$.
 
+```
 |--------|-----|
 0        n     m
          |-----|
           m - n
+```
 
 What about multiplication? You guessed it! The product $3 * 4$, for
 example, can be interpreted as the number $3$ on a number line whose
 unit $1$ is taken to be (the magnitude or size represented by) the
 number $4$. Visually:
 
+```
 |--|--|--|--|--|--|--|--|--|--|--|--|
 0  1  2  3  4  5  6  7  8  9  10 11 12
 
@@ -194,6 +200,7 @@ Now introduce new markers on the same line, where the new unit is $4$:
 0  1  2  3  4  5  6  7  8  9  10 11 12
             |           |           |
             1̣           2̣           3̣
+```
 
 ---
 
