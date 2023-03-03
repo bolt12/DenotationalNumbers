@@ -1,0 +1,3 @@
+name: DivisionDenotationalDesign
+depend: standard-library
+include: .
