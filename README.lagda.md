@@ -47,7 +47,7 @@ which case there will be a different number line to deal with.
 With this being said, the four arithmetic operations can be
 interpreted geometrically in the number line.
 
-For addition, we have that for any two whole numbers $m$ and $n$, $m + n = \text{the length of the segment obtained by concatenating the segments} [0, m] \text{and} [0, n]$:
+For addition, we have that for any two whole numbers $m$ and $n$, $m + n = \text{the length of the segment obtained by concatenating the segments}\ [0, m]\ \text{and}\ [0, n]$:
 
 ```
         m + n
