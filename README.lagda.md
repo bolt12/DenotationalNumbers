@@ -49,7 +49,7 @@ interpreted geometrically in the number line.
 
 For addition, we have that for any two whole numbers $m$ and $n$, $m + n = \text{the length of the segment obtained by concatenating the segments}\ [0, m]\ \text{and}\ [0, n]$:
 
-```
+```a
         m + n
 <--------------------->
 |------|--------------|
@@ -61,7 +61,7 @@ whole numbers concerns the importance of having the _same unit_ as a
 fixed reference! For example, imagine we have these two _different_
 number lines:
 
-```
+```a
 |--|--|--|--|--|--|  (A)
 0  1  2  3  4  5  6
 
@@ -72,7 +72,7 @@ number lines:
 If one takes segment $[0, 1]$ from the lower line (B) and segment $[0, 2]$
 from the upper line (A), could it be argued that $1 + 2 = 2$?
 
-```
+```a
 |-----|--|--|
    1  +  2
 ```
@@ -110,9 +110,9 @@ must refer to the _same unit_.
 
 Given this let's model what we learned so far:
 
-The number line is an infinite line with equally spaced marks to the
-right of the initial mark $0$. Two lines are equal if they have the
-same unit.
+- The number line is an infinite line with equally spaced marks to the
+  right of the initial mark $0$. Two lines are equal if they have the
+  same unit.
 
 ```agda
   open import Level renaming (zero to zeroℓ; suc to sucℓ)
@@ -126,8 +126,8 @@ same unit.
       unit : Unit
 ```
 
-Given this the natural number line is the line which unit $1$
-(i.e. segment $[0, 1]$).
+  Given this the natural number line is the line which unit $1$
+  (i.e. segment $[0, 1]$).
 
 ```agda
 
@@ -136,9 +136,9 @@ Given this the natural number line is the line which unit $1$
   NumberLine = record { unit = 1 }
 ```
 
-Mark (or point) in the line either starts at the $0$ mark or is a
-successor of the previous one. Note that the length between each two
-consecutive marks is equally spaced in the line.
+- Marks (or points) in the line either starts at the $0$ mark or is a
+  successor of the previous one. Note that the length between each two
+  consecutive marks is equally spaced in the line.
 
 ```agda
   -- A mark (or point) in the line depends on the line it sits on
@@ -147,17 +147,51 @@ consecutive marks is equally spaced in the line.
   data Mark {Unit : Set} (line : Line Unit) : Set where
     zero : Mark line
     suc : (m : Mark line) → Mark line
+```
 
-  -- {-# BUILTIN NATURAL Mark #-}
+  Agda supports number literals overloading via `BUILTING FROMNAT`
+  pragma. We'll use this in order to be able to write $1$, $2$, etc. for
+  each successive mark on any line, however each literal is going to
+  have an implicit argument about which line is it on (i.e. what
+  corresponding unit does this particular mark is in relation to).
+
+```agda
+  record NumberLiteral {Unit} (line : Line Unit) : Set where
+         field fromNat : ℕ → Mark line
+  
+  open NumberLiteral {{...}} public
+
+  {-# BUILTIN FROMNAT fromNat #-}
+
+  instance
+    LineNat : ∀ {Unit} {line : Line Unit} → NumberLiteral line
+    LineNat .NumberLiteral.fromNat ℕ.zero = zero
+    LineNat .NumberLiteral.fromNat (ℕ.suc n) = toMark n
+      where
+        toMark : ∀ {Unit} {line : Line Unit} (n : ℕ) → Mark line
+        toMark ℕ.zero = zero
+        toMark (ℕ.suc x) = suc (toMark x)
 
   -- Number one in the number line
   𝟙 : Mark NumberLine
   𝟙 = suc zero
+
+  -- Number one in the number line using literal overloading
+  𝟙ₒ : Mark NumberLine
+  𝟙ₒ = 1
+
+  -- Mark 1 in any number line
+  𝟙ℓ : ∀ {Unit} {line : Line Unit} → Mark line
+  𝟙ℓ = 1
 ```
 
-In a similar way to natural numbers as we know them, it is to be
-expected that if a mark $a$ is to the right of a mark $b$ then $a > b$.
-This allow us to define a line segment and its semantic:
+  So from now on when you see a number literal please assume it is the
+  corresponding successive mark on any line, unless it is explicit which
+  line it is.
+
+- In a similar way to natural numbers as we know them, it is to be
+  expected that if a mark $a$ is to the right of a mark $b$ then $a > b$.
+  This allow us to define a line segment and its semantic:
 
 ```agda
   data _≤_ {Unit : Set} {line : Line Unit} : Rel (Mark line) 0ℓ where
@@ -173,24 +207,44 @@ This allow us to define a line segment and its semantic:
   [ suc x , suc y ] {s≤s x≤y} =  [ x , y ] {x≤y}
 ```
 
-We've seen addition, but subtraction is also simple in fact we've
-defined it above. It is easy to see why, when understanding what
-subtraction means geometrically: $m - n$, when $m > n$, in the number
-line is exactly the length of going from $n$ to $m$, thus $m - n \equiv [n , m]$.
+- Addition (`_+_`) of two marks (in the _same_ line) is the length of
+  concatenatening two segment lines, i.e. adding two marks $x$ and
+  $y$ can be understood as starting in $y$ and moving $x$ marks to the
+  right of $y$ (or vice-versa).
 
+```agda
+  _+_ : ∀ {Unit} {line : Line Unit} → Mark line → Mark line → Mark line
+  zero + y = y
+  suc x + y = suc (x + y)
 ```
+
+Everything looking good so far! There's a still a few operations left
+to mention.
+
+We've actually already defined subtraction somewhere above. It is easy
+to see how, when understanding what subtraction means geometrically:
+$m - n$, when $m > n$, in the number line is exactly the length of
+going from $n$ to $m$, thus $m - n \equiv [n , m]$.
+
+```a
 |--------|-----|
 0        n     m
          |-----|
           m - n
 ```
 
-What about multiplication? You guessed it! The product $3 * 4$, for
-example, can be interpreted as the number $3$ on a number line whose
-unit $1$ is taken to be (the magnitude or size represented by) the
-number $4$. Visually:
+So:
 
+```agda
+  _-_ : ∀ {Unit} {line : Line Unit} (m n : Mark line) {m≤n : n ≤ m} → Mark line
+  (m - n) {n≤m} = [ n , m ] {n≤m}
 ```
+
+What about multiplication? The product $3 * 4$, for example, can be
+interpreted as the number $3$ on a number line whose unit $1$ is taken
+to be (the magnitude or size represented by) the number $4$. Visually:
+
+```a
 |--|--|--|--|--|--|--|--|--|--|--|--|
 0  1  2  3  4  5  6  7  8  9  10 11 12
 
@@ -198,8 +252,21 @@ Now introduce new markers on the same line, where the new unit is $4$:
 
 |--|--|--|--|--|--|--|--|--|--|--|--|
 0  1  2  3  4  5  6  7  8  9  10 11 12
-            |           |           |
-            1̣           2̣           3̣
+|           |           |           |
+0̣           1̣           2̣           3̣
+```
+
+In particular, $3 * 4$ is four copies of the new unit
+and is therefore $3$ in the new number line.
+
+This idea of using a new unit to re-interpret the multiplication of
+numbers provides an alternative way to understand the multiplication
+of fractions, that I am going to talk about later.
+
+```agda
+  _*_ : ∀ {Unit} {line : Line Unit} → Mark line → (newUnit : Mark line) → Mark (record { unit = newUnit })
+  zero * y = zero
+  suc x * y = {!!} + (x * y)
 ```
 
 ---
