@@ -119,21 +119,29 @@ Given this let's model what we learned so far:
   open import Data.Nat as ℕ using (ℕ)
   open import Relation.Binary
 
-  -- A line is parameterised by a unit type and contains the value of
-  -- that unit.
-  record Line (Unit : Set) : Set where
-    field
-      unit : Unit
+  -- Take a straight line and mark off a point as 0 (zero). Then fix a
+  -- segment to the right of 0 and call it the unit segment. Mark the
+  -- right endpoint of this segment on the line, thereby generating
+  -- the first marked point. The multiples of this marked point then
+  -- form a sequence of equispaced points to the right of 0.
+  --
+  -- Natural number line:
+  -- zero ∣ ∣ ∣ ∣ ∣ ∣ ∣ ∣ ...
+  --    0 1 2 3 4 5 6 7 8 ...
+  --    
+  data Line {Unit : Set} (unit : Unit) : Set where
+    zero : Line unit
+    _∣ : (l : Line unit) → Line unit
 ```
 
-  Given this the natural number line is the line which unit $1$
+  Given this the natural number line is the line which unit is $1$
   (i.e. segment $[0, 1]$).
 
 ```agda
 
-  -- Number line uses 1 as the unit
-  NumberLine : Line ℕ
-  NumberLine = record { unit = 1 }
+  -- Natural number line uses 1 as the unit
+  ℕ-Line : Set
+  ℕ-Line = Line 1
 ```
 
 - Marks (or points) in the line either starts at the $0$ mark or is a
@@ -144,9 +152,9 @@ Given this let's model what we learned so far:
   -- A mark (or point) in the line depends on the line it sits on
   -- The length between two successive marks, i.e. a segment line
   -- [a, suc a] means 1 unit value.
-  data Mark {Unit : Set} (line : Line Unit) : Set where
-    zero : Mark line
-    suc : (m : Mark line) → Mark line
+  -- data Mark {Unit : Set} (line : Line Unit) : Set where
+  --   zero : Mark line
+  --   suc : (m : Mark line) → Mark line
 ```
 
   Agda supports number literals overloading via `BUILTING FROMNAT`
@@ -156,32 +164,31 @@ Given this let's model what we learned so far:
   corresponding unit does this particular mark is in relation to).
 
 ```agda
-  record NumberLiteral {Unit} (line : Line Unit) : Set where
-         field fromNat : ℕ → Mark line
+  record NumberLiteral {Unit} (unit : Unit) : Set where
+         field fromNat : ℕ → Line unit
   
   open NumberLiteral {{...}} public
 
   {-# BUILTIN FROMNAT fromNat #-}
 
   instance
-    LineNat : ∀ {Unit} {line : Line Unit} → NumberLiteral line
-    LineNat .NumberLiteral.fromNat ℕ.zero = zero
-    LineNat .NumberLiteral.fromNat (ℕ.suc n) = toMark n
+    LineNat : ∀ {Unit} {unit : Unit} → NumberLiteral unit
+    LineNat .NumberLiteral.fromNat = toMark
       where
-        toMark : ∀ {Unit} {line : Line Unit} (n : ℕ) → Mark line
+        toMark : ∀ {Unit} {unit : Unit} (n : ℕ) → Line unit
         toMark ℕ.zero = zero
-        toMark (ℕ.suc x) = suc (toMark x)
+        toMark (ℕ.suc x) = (toMark x) ∣
 
-  -- Number one in the number line
-  𝟙 : Mark NumberLine
-  𝟙 = suc zero
+  -- Mark (number) one in the number line
+  𝟙 : ℕ-Line
+  𝟙 = zero ∣
 
-  -- Number one in the number line using literal overloading
-  𝟙ₒ : Mark NumberLine
+  -- Mark (number) one in the number line using literal overloading
+  𝟙ₒ : ℕ-Line
   𝟙ₒ = 1
 
-  -- Mark 1 in any number line
-  𝟙ℓ : ∀ {Unit} {line : Line Unit} → Mark line
+  -- Mark one in any number line
+  𝟙ℓ : ∀ {Unit} {unit : Unit} → Line unit
   𝟙ℓ = 1
 ```
 
@@ -194,17 +201,18 @@ Given this let's model what we learned so far:
   This allow us to define a line segment and its semantic:
 
 ```agda
-  data _≤_ {Unit : Set} {line : Line Unit} : Rel (Mark line) 0ℓ where
+  infix 4 _≤_
+  data _≤_ {Unit : Set} {unit : Unit} : Rel (Line unit) 0ℓ where
     z≤n : ∀ {n}                 → zero  ≤ n
-    s≤s : ∀ {m n} (m≤n : m ≤ n) → suc m ≤ suc n
+    s≤s : ∀ {m n} (m≤n : m ≤ n) → m ∣   ≤ n ∣
 
   -- The length of segment [x, y] is n for a whole number n if, by
   -- sliding [x, y] to the left along the line until x rests at
   -- 0, the right endpoint y rests at n.
-  [_,_] : ∀ {Unit : Set} {line : Line Unit} (m n : Mark line) {m≤n : m ≤ n} → Mark line
+  [_,_] : ∀ {Unit : Set} {unit : Unit} (m n : Line unit) {m≤n : m ≤ n} → Line unit
   [ zero , zero ] = zero
-  [ zero , suc y ] = suc y
-  [ suc x , suc y ] {s≤s x≤y} =  [ x , y ] {x≤y}
+  [ zero , y ∣ ]  = y ∣
+  [ x ∣ , y ∣ ] {s≤s x≤y} = [ x , y ] {x≤y}
 ```
 
 - Addition (`_+_`) of two marks (in the _same_ line) is the length of
@@ -213,9 +221,10 @@ Given this let's model what we learned so far:
   right of $y$ (or vice-versa).
 
 ```agda
-  _+_ : ∀ {Unit} {line : Line Unit} → Mark line → Mark line → Mark line
+  infixl 6 _+_
+  _+_ : ∀ {Unit} {unit : Unit} → Line unit → Line unit → Line unit
   zero + y = y
-  suc x + y = suc (x + y)
+  x ∣ + y  = x + y ∣
 ```
 
 Everything looking good so far! There's a still a few operations left
@@ -236,7 +245,7 @@ going from $n$ to $m$, thus $m - n \equiv [n , m]$.
 So:
 
 ```agda
-  _-_ : ∀ {Unit} {line : Line Unit} (m n : Mark line) {m≤n : n ≤ m} → Mark line
+  _-_ : ∀ {Unit} {unit : Unit} (m n : Line unit) {m≤n : n ≤ m} → Line unit
   (m - n) {n≤m} = [ n , m ] {n≤m}
 ```
 
@@ -263,31 +272,47 @@ This idea of using a new unit to re-interpret the multiplication of
 numbers provides an alternative way to understand the multiplication
 of fractions, that I am going to talk about later.
 
+Unfortunately, this interesting line transformation is not expressable
+when keeping both marks and the `Unit` abstract. Instead we model it
+as successive jumps of groups of marks on the same line:
+
 ```agda
-  _*_ : ∀ {Unit} {line : Line Unit} → Mark line → (newUnit : Mark line) → Mark (record { unit = newUnit })
+  infixl 7 _*_
+  _*_ : ∀ {Unit} {unit : Unit} → Line unit → Line unit → Line unit
   zero * y = zero
-  suc x * y = {!!} + (x * y)
+  x ∣ * y  = y + (x * y)
 ```
+
+## Fractions
+
+```agda
+  open import Data.Product 
+
+  Fraction′ : ∀ {Unit} (d : Unit) → Set
+  Fraction′ {Unit} d = ∃ {A = Unit} Line × Line d
+
+  ½′ : Fraction′ {ℕ} (ℕ.suc (ℕ.suc ℕ.zero))
+  ½′ = (ℕ.suc ℕ.zero , 1) , 1
+
+  ¾′ : Fraction′ {ℕ} (ℕ.suc (ℕ.suc (ℕ.suc (ℕ.suc ℕ.zero))))
+  ¾′ = (ℕ.suc ℕ.zero , 3) , 1 -- or ((3 , 1) , 1) 
+
+  Fraction : ∀ {Unit : Set} (d : Unit) → Set 
+  Fraction {Unit} d = ∃ {A = Unit} λ n → Line (n , d)
+
+  ½ : Fraction {ℕ-Line} 2
+  ½ = 1 , 1
+
+  ¾ : Fraction {ℕ-Line} 4
+  ¾ = 1 , 3 -- or (3 , 1)
+
+  _≈_ : ∀ {d : ℕ} → Fraction′ d → Fraction′ d → Set
+  ((u , n) , m) ≈ ((u′ , n′) , m′) = {!!}
+``` 
+
 
 ---
 
-```agda
-  open import Relation.Binary.PropositionalEquality
-  open import Function.Bundles
-
-  -- Showing there's a correspondance between Natural numbers and
-  -- Marks in lines where the unit is a natural number.
-
-
-  ℕ→Markℕ : ∀ {line : Line ℕ} → ℕ → Mark line
-  ℕ→Markℕ {record { unit = unit }} n = {!!}
-
-  Markℕ→ℕ : ∀ {line : Line ℕ} → Mark line → ℕ
-  Markℕ→ℕ {record { unit = unit }} n = {!!}
-
-  ℕ↔NumberLine : Line ℕ → ℕ ↔ Mark NumberLine
-  ℕ↔NumberLine l = {!!}
-```
 
 Take the concept of a fraction or a decimal, for example. It is
 almost never clearly defined. Yet children are asked to add, multi-
